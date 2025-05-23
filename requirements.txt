@@ -1,0 +1,12 @@
+pandas
+numpy
+faker
+sqlalchemy
+# banco específico:
+psycopg2-binary    
+# API:
+fastapi
+uvicorn
+# Dashboard:
+streamlit
+scikit-learn

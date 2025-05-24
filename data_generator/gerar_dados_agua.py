@@ -112,7 +112,7 @@ def main(db_url: str, dias: int, usuario_id: int):
                 registros.append({
                     "usuario_id": usuario_id,
                     "atividade": atividade,
-                    "volume_litros": float(vol),
+                    "volume_litros": round(vol, 3),
                     "timestamp": ts
                 })
 

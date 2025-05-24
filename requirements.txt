@@ -2,8 +2,7 @@ pandas
 numpy
 faker
 sqlalchemy
-# banco específico:
-psycopg2-binary    
+plotly   
 # API:
 fastapi
 uvicorn

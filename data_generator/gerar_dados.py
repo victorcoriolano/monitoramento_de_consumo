@@ -125,7 +125,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--db", default="sqlite:///./consumo.db",
                         help="URL do banco (ex: sqlite:///./consumo.db ou postgresql://user:pass@host/db)")
-    parser.add_argument("--dias", type=int, default=7,
+    parser.add_argument("--dias", type=int, default=90,
                         help="Quantos dias para gerar retroativamente")
     parser.add_argument("--usuario", type=int, default=1,
                         help="ID do usuário dono dos dados")

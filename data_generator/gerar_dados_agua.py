@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, 
 # média diária total / frequência média → média por vez
 PERFIS = {
     "escovar_dentes": {
-        "mean_l": 2.0,   # litros por evento
+        "mean_l": 1.0,   # litros por evento
         "std_l": 0.5,
         "freq_dia": 2,
         "window": [(7, 9), (20, 22)]
@@ -52,15 +52,15 @@ PERFIS = {
     },
     "banho": {
         "mean_l": 45.0,
-        "std_l": 10.0,
+        "std_l": 5.0,
         "freq_dia": 1.5,
         "window": [(6, 10), (18, 22)]
     },
     "descarga": {
-        "mean_l": 6.0,
-        "std_l": 1.0,
+        "mean_l": 6,
+        "std_l": 0,
         "freq_dia": 3,
-        "window": [(0, 23)]
+        "window": [(9, 11), (17, 19)]
     },
     "garrafa_agua": {
         "mean_l": 2.0,
@@ -73,8 +73,19 @@ PERFIS = {
         "std_l": 5.0,
         "freq_dia": 2/30,  # 2 vezes ao mês → ~0.066 por dia
         "window": [(7, 20)]
+    },
+    "limpeza_casa": {
+        "mean_l": 50.0,
+        "std_l": 2.0,
+        "freq_dia": 0.5,
+        "window": [(8, 18)]
+    },
+    "construcao": {
+        "mean_l": 200.0,
+        "std_l": 10.0,
+        "freq_dia": 0.25,
+        "window": [(7, 18)]
     }
-    
 }
 
 # === 2) Setup Faker + Banco via SQLAlchemy ===
@@ -113,7 +124,7 @@ def main(db_url: str, dias: int, usuario_id: int):
                 registros.append({
                     "usuario_id": usuario_id,
                     "atividade": atividade,
-                    "volume_litros": round(vol, 3),
+                    "volume_litros": round(vol, 2),
                     "timestamp": ts
                 })
 

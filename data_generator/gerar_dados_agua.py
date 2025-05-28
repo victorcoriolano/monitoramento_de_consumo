@@ -21,7 +21,7 @@ PERFIS = {
         "window": [(6, 22)]
     },
     "lavar_rosto": {
-        "mean_l": 2.0,
+        "mean_l": 1.0,
         "std_l": 0.5,
         "freq_dia": 1,
         "window": [(6, 22)]
@@ -47,7 +47,7 @@ PERFIS = {
     "tanque": {
         "mean_l": 10.0,
         "std_l": 2.0,
-        "freq_dia": 1.5,
+        "freq_dia": 0.5,
         "window": [(8, 18)]
     },
     "banho": {
@@ -59,7 +59,7 @@ PERFIS = {
     "descarga": {
         "mean_l": 6.0,
         "std_l": 1.0,
-        "freq_dia": 2,
+        "freq_dia": 3,
         "window": [(0, 23)]
     },
     "garrafa_agua": {
@@ -68,12 +68,13 @@ PERFIS = {
         "freq_dia": 1,
         "window": [(8, 22)]
     },
-    "maquina_lavar": {
-        "mean_l": 82.0,
+    "lavar_roupa": {
+        "mean_l": 164.0,
         "std_l": 5.0,
         "freq_dia": 2/30,  # 2 vezes ao mês → ~0.066 por dia
         "window": [(7, 20)]
     }
+    
 }
 
 # === 2) Setup Faker + Banco via SQLAlchemy ===
@@ -106,7 +107,7 @@ def main(db_url: str, dias: int, usuario_id: int):
                 # volume e horário
                 vol = max(0.01, np.random.normal(perfil["mean_l"], perfil["std_l"]))
                 janela = fake.random_element(perfil["window"])
-                hora = np.random.randint(janela[0], janela[1] + 1)
+                hora = np.random.randint(janela[0], min(janela[1] + 1, 23))
                 minuto = np.random.randint(0, 60)
                 ts = datetime.combine(data, time(hora, minuto))
                 registros.append({
@@ -125,7 +126,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--db", default="sqlite:///./consumo.db",
                         help="URL do banco (ex: sqlite:///./consumo.db ou postgresql://user:pass@host/db)")
-    parser.add_argument("--dias", type=int, default=90,
+    parser.add_argument("--dias", type=int, default=30,
                         help="Quantos dias para gerar retroativamente")
     parser.add_argument("--usuario", type=int, default=1,
                         help="ID do usuário dono dos dados")

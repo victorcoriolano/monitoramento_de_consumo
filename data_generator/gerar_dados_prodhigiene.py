@@ -6,134 +6,43 @@ from faker import Faker
 from sqlalchemy import create_engine, Column, Integer, Float, String, Date, MetaData, Table
 
 # === Perfis de consumo por produto ===
-PERFIS = {
-    "rolo_papel_higienico": {
-        "unidade": "unidade",
-        "consumo_mensal": 3.9,
-        "variacao_diaria": 0.05,
-        "freq_compra": 1/2,
-        "quantidade_compra": 4,
-        "window_compra": [(9, 18)]
-    },
-    "pasta_de_dente": {
-        "unidade": "gramas",
-        "consumo_mensal": 45,
-        "variacao_diaria": 0.3,
-        "freq_compra": 1/4,
-        "quantidade_compra": 90,
-        "window_compra": [(9, 18)]
-    },
-    "sabonete": {
-        "unidade": "unidade",
-        "consumo_mensal": 2.1,
-        "variacao_diaria": 0.03,
-        "freq_compra": 1/4,
-        "quantidade_compra": 4,
-        "window_compra": [(9, 18)]
-    },
-    "creme_antitranspirante": {
-        "unidade": "ml",
-        "consumo_mensal": 50,
-        "variacao_diaria": 0.1,  # Estimativa de variação diária
-        "freq_compra": 1/4,
-        "quantidade_compra": 50,
-        "window_compra": [(9, 18)]
-    },
-    "condicionador": {
-        "unidade": "ml",
-        "consumo_mensal": 300,
-        "variacao_diaria": 10,   # Estimativa de variação diária
-        "freq_compra": 1/2,
-        "quantidade_compra": 300,
-        "window_compra": [(9, 18)]
-    },
-    "shampoo": {
-        "unidade": "ml",
-        "consumo_mensal": 300,
-        "variacao_diaria": 10,   # Estimativa de variação diária
-        "freq_compra": 1/2,
-        "quantidade_compra": 300,
-        "window_compra": [(9, 18)]
-    },
-    "sabao_para_lavar_louca": {
-        "unidade": "ml",
-        "consumo_mensal": 1000,
-        "variacao_diaria": 30,   # Estimativa de variação diária
-        "freq_compra": 1/4,
-        "quantidade_compra": 500,
-        "window_compra": [(9, 18)]
-    },
-    "detergente": {
-        "unidade": "ml",
-        "consumo_mensal": 1500,
-        "variacao_diaria": 50,   # Estimativa de variação diária
-        "freq_compra": 1/3,
-        "quantidade_compra": 500,
-        "window_compra": [(9, 18)]
-    },
-    "veja": {
-        "unidade": "ml",
-        "consumo_mensal": 1500,
-        "variacao_diaria": 50,   # Estimativa de variação diária
-        "freq_compra": 1/4,
-        "quantidade_compra": 500,
-        "window_compra": [(9, 18)]
-    },
-    "desinfetante_veja_2l": {
-        "unidade": "ml",
-        "consumo_mensal": 4000,
-        "variacao_diaria": 100,  # Estimativa de variação diária
-        "freq_compra": 1/4,
-        "quantidade_compra": 2000,
-        "window_compra": [(9, 18)]
-    },
-    "cloro_5l": {
-        "unidade": "ml",
-        "consumo_mensal": 5000,
-        "variacao_diaria": 150,  # Estimativa de variação diária
-        "freq_compra": 1/2,
-        "quantidade_compra": 5000,
-        "window_compra": [(9, 18)]
-    },
-    "desinfetante_cheirinho_pinho": {
-        "unidade": "ml",
-        "consumo_mensal": 500,
-        "variacao_diaria": 20,   # Estimativa de variação diária
-        "freq_compra": 1/2,
-        "quantidade_compra": 500,
-        "window_compra": [(9, 18)]
-    },
-    "sabao_em_po_5k": {
-        "unidade": "kg",
-        "consumo_mensal": 5,
-        "variacao_diaria": 0.2,  # Estimativa de variação diária
-        "freq_compra": 1/4,
-        "quantidade_compra": 5,
-        "window_compra": [(9, 18)]
-    },
-    "amaciante_2l": {
-        "unidade": "ml",
-        "consumo_mensal": 2000,
-        "variacao_diaria": 80,   # Estimativa de variação diária
-        "freq_compra": 1/5,
-        "quantidade_compra": 2000,
-        "window_compra": [(9, 18)]
-    }
-}
+
 
 faker = Faker()
 metadata = MetaData()
 
-consumo_tbl = Table(
-    "consumo_higiene", metadata,
+
+compra_tbl = Table(
+    "compra_higiene", metadata,
     Column("id", Integer, primary_key=True),
     Column("usuario_id", Integer, nullable=False),
     Column("produto", String, nullable=False),
     Column("quantidade", Float, nullable=False),
     Column("unidade", String, nullable=False),
-    Column("tipo", String, nullable=False),  # 'uso' ou 'compra'
+    Column("gasto_total", Float, nullable=False),
     Column("timestamp", Date, nullable=False),
 )
+
+atividade_gasto_tbl = Table(
+    "atividade_gasto", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("usuario_id", Integer, nullable=False),
+    Column("atividade", String, nullable=False),
+    Column("quantidade", Float, nullable=False),
+    Column("timestamp", Date, nullable=False),
+)
+
+produto_tbl = Table(
+    "produto", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("nome", String, nullable=False),
+    Column("unidade", String, nullable=False),
+    Column("quantidade_restante", Float, nullable=False),
+    Column("preco_unitario", Float, nullable=False),
+)
+
+
+
 
 def main(db_url: str, dias: int, usuario_id: int):
     engine = create_engine(db_url)

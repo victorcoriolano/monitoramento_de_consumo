@@ -18,7 +18,7 @@ class Consumo(BaseModel):
 
 @app.post("/consumo")
 def cria(consumo: Consumo):
-    ins = consumo_tbl.insert().values(**consumo.dict())
+    ins = consumo_tbl.insert().values(**consumo.model_dump())
     with engine.begin() as conn:
         conn.execute(ins)
     return {"status":"ok"}

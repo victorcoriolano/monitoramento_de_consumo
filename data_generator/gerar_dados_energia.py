@@ -45,7 +45,7 @@ PERFIS = {
     "chuveiro_eletrico": {
         "potencia_w": 5500,
         "mean_h_dia": 0.083,  # 5 minutos
-        "std_h_dia": 0.05,
+        "std_h_dia": 0.02,
         "freq_dia": 2,
         "window": [(10, 12), (22, 23)]
     },
@@ -55,13 +55,6 @@ PERFIS = {
         "std_h_dia": 2,
         "freq_dia": 1,
         "window": [(22, 24), (7, 8)]
-    },
-    "batedeira": {
-        "potencia_w": 415,
-        "mean_h_dia": 0.3,
-        "std_h_dia": 0.1,
-        "freq_dia_semana": 1,
-        "window": [(15, 18)]
     },
     "maquina_lavar_roupa": {
         "potencia_w": 1500,

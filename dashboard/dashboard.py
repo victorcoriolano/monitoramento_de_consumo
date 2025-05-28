@@ -1,34 +1,23 @@
+# monitor_consumo.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from sqlalchemy import create_engine
 
-# Banco de dados local SQLite
+# Configuração inicial
+st.set_page_config(page_title="Monitor de Consumo", layout="wide", page_icon="💧")
+st.title("📊 Monitor de Consumo Doméstico")
+st.markdown("Visualize o consumo de **água, energia e produtos de higiene/limpeza**.")
+
+# Banco de dados
 engine = create_engine("sqlite:///../consumo.db")
 
-# ------------------------------
-# TÍTULO E CONFIG
-# ------------------------------
-st.set_page_config(
-    page_title="Monitor de Consumo",
-    layout="wide",
-    page_icon="💧"
-)
-
-st.title("📊 Monitor de Consumo Doméstico")
-st.markdown("Este painel visualiza dados de **consumo doméstico**, incluindo água, energia e produtos de higiene e limpeza.")
-
-# ------------------------------
-# SIDEBAR
-# ------------------------------
+# Sidebar
 st.sidebar.header("🔍 Filtros")
-
 tipo_consumo = st.sidebar.selectbox("Tipo de Consumo", ["Água", "Energia", "Higiene e Limpeza"])
-dias = st.sidebar.slider("Últimos dias", min_value=1, max_value=90, value=7)
+dias = st.sidebar.slider("Últimos dias", 1, 30, 7)
 
-# ------------------------------
-# FUNÇÃO UTILITÁRIA
-# ------------------------------
+# Funções utilitárias
 def carregar_dados(tabela, dias, filtro_col=None, filtro_valor=None):
     query = f"SELECT * FROM {tabela} WHERE timestamp >= date('now','-{dias} day')"
     if filtro_col and filtro_valor and filtro_valor != "Todas":
@@ -36,94 +25,124 @@ def carregar_dados(tabela, dias, filtro_col=None, filtro_valor=None):
     df = pd.read_sql(query, engine, parse_dates=["timestamp"])
     return df.set_index("timestamp").sort_index()
 
-# ------------------------------
-# CONSUMO DE ÁGUA
-# ------------------------------
-if tipo_consumo == "Água":
-    tabela = "consumo_agua"
-    df_atividades = pd.read_sql(f"SELECT DISTINCT atividade FROM {tabela}", engine)
-    atividades = ["Todas"] + df_atividades["atividade"].tolist()
-    atividade = st.sidebar.selectbox("Atividade", atividades)
+def dias_monitorados(tabela):
+    df = pd.read_sql(f"SELECT timestamp FROM {tabela}", engine)
+    df['data'] = pd.to_datetime(df['timestamp']).dt.date
+    return df['data'].nunique()
 
+# Seção Água
+def mostrar_agua():
+    tabela = "consumo_agua"
+    atividades = ["Todas"] + pd.read_sql(f"SELECT DISTINCT atividade FROM {tabela}", engine)["atividade"].tolist()
+    atividade = st.sidebar.selectbox("Atividade", atividades)
     df = carregar_dados(tabela, dias, "atividade", atividade)
 
-    if not df.empty:
-        total = df["volume_litros"].sum()
-        max_atividade = df.groupby("atividade")["volume_litros"].sum().idxmax()
-        min_atividade = df.groupby("atividade")["volume_litros"].sum().idxmin()
+    def calcular_custo(litros):
+        return 50 if litros <= 10000 else 50 + ((litros - 10000) / 1000) * 2.29
 
-        col1, col2, col3 = st.columns(3)
-        col1.metric("💧 Total Consumido", f"{total:.1f} L")
-        col2.metric("📈 Atividade com Maior Consumo", max_atividade)
-        col3.metric("📉 Atividade com Menor Consumo", min_atividade)
+    if df.empty:
+        st.warning("⚠️ Nenhum dado encontrado.")
+        return
 
-        st.subheader("📅 Consumo ao longo do tempo")
-        st.line_chart(df["volume_litros"])
+    total = df["volume_litros"].sum()
+    max_atividade = df.groupby("atividade")["volume_litros"].sum().idxmax()
+    min_atividade = df.groupby("atividade")["volume_litros"].sum().idxmin()
+    dias_mon = dias_monitorados(tabela)
 
-        st.subheader("🥧 Distribuição por atividade")
-        graf_pizza = df.groupby("atividade")["volume_litros"].sum().reset_index()
-        fig = px.pie(graf_pizza, values="volume_litros", names="atividade", title="Porcentagem de Consumo")
-        st.plotly_chart(fig, use_container_width=True)
+    col1, col2, col3 = st.columns(3)
+    col1.metric("💧 Total Consumido", f"{total:.1f} L")
+    col2.metric("📈 Maior Consumo", max_atividade)
+    col3.metric("📉 Menor Consumo", min_atividade)
 
-        st.subheader("📊 Volume por dia")
-        df_diario = df.resample("D").sum()
-        fig_barra = px.bar(df_diario, y="volume_litros", title="Consumo Diário")
-        st.plotly_chart(fig_barra, use_container_width=True)
+    st.subheader("📅 Consumo ao longo do tempo")
+    st.line_chart(df["volume_litros"])
 
-        with st.expander("📄 Mostrar dados brutos"):
-            st.dataframe(df)
-    else:
-        st.warning("⚠️ Nenhum dado encontrado para os filtros escolhidos.")
+    st.subheader("🥧 Por Atividade")
+    fig_pie = px.pie(df.groupby("atividade")["volume_litros"].sum().reset_index(),
+                     values="volume_litros", names="atividade")
+    st.plotly_chart(fig_pie, use_container_width=True)
 
-# ------------------------------
-# CONSUMO DE ENERGIA
-# ------------------------------
-elif tipo_consumo == "Energia":
+    st.subheader("📊 Por Dia")
+    fig_bar = px.bar(df.resample("D").sum(), y="volume_litros", title="Consumo Diário")
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+    st.subheader("💸 Gastos")
+    st.write(f"R$ {calcular_custo(total):.2f} nos últimos {dias_mon} dias.")
+
+    with st.expander("📄 Dados Brutos"):
+        st.dataframe(df)
+
+    return df
+
+# Seção Energia
+def mostrar_energia():
     tabela = "consumo_energia"
     df = carregar_dados(tabela, dias)
 
-    if not df.empty:
-        total = df["gasto_h"].sum()
-        col1, col2 = st.columns(2)
-        col1.metric("⚡ Energia Total", f"{total:.2f} kWh")
-        col2.metric("📅 Dias Monitorados", df.index.nunique())
+    def calcular_custo(kwh): return kwh * 0.656
 
-        st.subheader("📅 Consumo de Energia ao longo do tempo")
-        fig = px.line(df, y="gasto_h", title="Consumo de Energia")
-        st.plotly_chart(fig, use_container_width=True)
+    if df.empty:
+        st.warning("⚠️ Nenhum dado encontrado.")
+        return
 
-        with st.expander("📄 Mostrar dados brutos"):
-            st.dataframe(df)
-    else:
-        st.warning("⚠️ Nenhum dado de energia encontrado.")
+    total = df["gasto_h"].sum()
+    dias_mon = dias_monitorados(tabela)
+    col1, col2 = st.columns(2)
+    col1.metric("⚡ Total kWh", f"{total:.2f}")
+    col2.metric("📅 Dias", dias_mon)
 
-# ------------------------------
-# CONSUMO DE HIGIENE E LIMPEZA
-# ------------------------------
-elif tipo_consumo == "Higiene e Limpeza":
+    st.subheader("📅 Consumo ao longo do tempo")
+    st.plotly_chart(px.line(df, y="gasto_h"), use_container_width=True)
+
+    st.subheader("📊 Por Dia")
+    st.plotly_chart(px.bar(df.resample("D").sum(), y="gasto_h"), use_container_width=True)
+
+    st.subheader("💸 Gastos")
+    st.write(f"R$ {calcular_custo(total):.2f} em {dias_mon} dias.")
+
+    with st.expander("📄 Dados Brutos"):
+        st.dataframe(df)
+
+    return df
+
+# Seção Higiene e Limpeza
+def mostrar_higiene():
     tabela = "consumo_higiene"
-    df_produtos = pd.read_sql(f"SELECT DISTINCT produto FROM {tabela}", engine)
-    produtos = ["Todos"] + df_produtos["produto"].tolist()
+    produtos = ["Todas"] + pd.read_sql(f"SELECT DISTINCT produto FROM {tabela}", engine)["produto"].tolist()
     produto = st.sidebar.selectbox("Produto", produtos)
-
     df = carregar_dados(tabela, dias, "produto", produto)
 
-    if not df.empty:
-        total = df["quantidade"].sum()
-        col1, col2 = st.columns(2)
-        col1.metric("🧴 Total Comprado", f"{total:.2f}")
-        col2.metric("🛒 Compras registradas", len(df))
+    if df.empty:
+        st.warning("⚠️ Nenhum dado encontrado.")
+        return
 
-        st.subheader("📅 Compras ao longo do tempo")
-        fig = px.bar(df, y="quantidade", title="Compras por Data")
-        st.plotly_chart(fig, use_container_width=True)
+    total = df["quantidade"].sum()
+    col1, col2 = st.columns(2)
+    col1.metric("🧴 Total", f"{total:.2f}")
+    col2.metric("🛒 Registros", len(df))
 
-        st.subheader("📦 Distribuição por Produto")
-        dist = df.groupby("produto")["quantidade"].sum().reset_index()
-        fig2 = px.pie(dist, values="quantidade", names="produto")
-        st.plotly_chart(fig2, use_container_width=True)
+    st.subheader("📅 Compras por Data")
+    st.plotly_chart(px.bar(df, y="quantidade"), use_container_width=True)
 
-        with st.expander("📄 Mostrar dados brutos"):
-            st.dataframe(df)
-    else:
-        st.warning("⚠️ Nenhum dado de higiene/limpeza encontrado.")
+    st.subheader("📦 Distribuição")
+    fig = px.pie(df.groupby("produto")["quantidade"].sum().reset_index(),
+                 values="quantidade", names="produto")
+    st.plotly_chart(fig, use_container_width=True)
+
+    with st.expander("📄 Dados Brutos"):
+        st.dataframe(df)
+
+    return df
+
+# Exibição condicional por tipo
+if tipo_consumo == "Água":
+    df = mostrar_agua()
+elif tipo_consumo == "Energia":
+    df = mostrar_energia()
+elif tipo_consumo == "Higiene e Limpeza":
+    df = mostrar_higiene()
+
+# Exportação de dados
+if 'df' in locals() and df is not None and not df.empty:
+    st.divider()
+    st.download_button("📥 Baixar CSV", df.reset_index().to_csv(index=False), file_name="dados_consumo.csv")

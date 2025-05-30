@@ -4,8 +4,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from faker import Faker
 from sqlalchemy import create_engine, Column, Integer, Float, String, Date, MetaData, Table
-from sqlalchemy.orm import Session
-import time
+
 
 # === Produtos e perfis de consumo ===
 PRODUTOS = [
@@ -28,43 +27,43 @@ PRODUTOS = [
 
 PERFIL_GASTOS = {
     "limpar_ouvidos": {
-        "gasto_total": [0.017],
+        "gasto_total": [0.016],
         "produtos": ["cotonete"],
-        "freq_dia": 0.5,
+        "freq_dia": 1,
         "window": [(7, 8), (22, 23)]
     },
     "escovar_dentes": {
-        "gasto_total": [0.0167],
+        "gasto_total": [0.03],
         "produtos": ["pasta_dente"],
         "freq_dia": 2,
         "window": [(7, 8), (22, 23)]
     },
     "lavar_roupa": {
-        "gasto_total": [0.0333, 0.0167],
+        "gasto_total": [0.03, 0.05],
         "produtos": ["sabao_em_po", "amaciante"],
-        "freq_dia": 0.5,
+        "freq_dia": 0.25,
         "window": [(9, 12), (18, 21)]
     },
     "lavar_louca": {
-        "gasto_total": [0.04, 0.05],
+        "gasto_total": [0.08, 0.08],
         "produtos": ["detergente", "sabao_pedra"],
         "freq_dia": 2,
         "window": [(7, 9), (19, 21)]
     },
     "lavar_maos": {
-        "gasto_total": [0.002],
+        "gasto_total": [0.03],
         "produtos": ["sabonete"],
         "freq_dia": 5,
         "window": [(6, 23)]
     },
     "banho": {
-        "gasto_total": [0.04, 0.0667, 0.0667],
+        "gasto_total": [0.1, 0.08, 0.08],
         "produtos": ["sabonete", "shampoo", "condicionador"],
         "freq_dia": 1,
         "window": [(7, 9), (21, 23)]
     },
     "cagar": {
-        "gasto_total": [0.0333],
+        "gasto_total": [0.02],
         "produtos": ["rolo_papel"],
         "freq_dia": 1,
         "window": [(7, 9), (12, 13), (18, 20)]
@@ -76,13 +75,13 @@ PERFIL_GASTOS = {
         "window": [(9, 12)]
     },
     "passar_desodorante": {
-        "gasto_total": [0.025],
+        "gasto_total": [0.03],
         "produtos": ["desodorante"],
         "freq_dia": 1,
         "window": [(7, 9)]
     },
     "assoar_nariz": {
-        "gasto_total": [0.0067],
+        "gasto_total": [0.01],
         "produtos": ["rolo_papel"],
         "freq_dia": 5,
         "window": [(6, 23)]
@@ -118,38 +117,42 @@ atividade_tbl = Table(
     Column("usuario_id", Integer, nullable=False),
     Column("produto_id", Integer, nullable=False),
     Column("atividade", String, nullable=False),
-    Column("quantidade", Float, nullable=False),
+    Column("porcentagem_gasto", Float, nullable=False),
+    Column("consumo", Float, nullable=False),
     Column("data", Date, nullable=False),
 )
 
 
 def inserir_produtos(engine):
+    hoje = datetime.now().date()
+    d = hoje - timedelta(days=100)
     produtos = [
-        ("rolo_papel", "m", 30, 5.0),
-        ("pasta_dente", "g", 70, 7.0),
-        ("sabonete", "g", 70, 3.0),
-        ("desodorante", "g", 55, 9.0),
-        ("condicionador", "ml", 200, 12.0),
-        ("shampoo", "ml", 200, 10.0),
-        ("sabao_pedra", "g", 200, 2.5),
-        ("detergente", "ml", 500, 3.0),
-        ("veja", "ml", 500, 6.0),
-        ("desinfetante", "ml", 2000, 8.0),
-        ("cloro", "ml", 5000, 7.5),
-        ("pinho", "ml", 1000, 6.5),
-        ("sabao_em_po", "g", 5000, 20.0),
-        ("amaciante", "ml", 2000, 11.0),
-        ("cotonete", "un", 75, 5.0)
+        ("rolo_papel", "m", 30, 5.0, d),
+        ("pasta_dente", "g", 70, 7.0, d),
+        ("sabonete", "g", 70, 3.0, d),
+        ("desodorante", "g", 55, 9.0 , d),
+        ("condicionador", "ml", 200, 12.0 , d),
+        ("shampoo", "ml", 200, 10.0     , d),
+        ("sabao_pedra", "g", 200, 2.5   , d),
+        ("detergente", "ml", 500, 3.0 , d),
+        ("veja", "ml", 500, 6.0 , d),
+        ("desinfetante", "ml", 2000, 8.0 , d),
+        ("cloro", "ml", 5000, 7.5   , d),
+        ("pinho", "ml", 1000, 6.5   , d),
+        ("sabao_em_po", "g", 1000, 20.0 , d),
+        ("amaciante", "ml", 2000, 11.0  , d),
+        ("cotonete", "un", 75, 5.0      , d),
     ]
 
     with engine.begin() as conn: 
-        for nome, unidade, qtd, preco in produtos:
+        for nome, unidade, qtd, preco, data in produtos:
             print(f">> Inserindo produto {nome}...")
             conn.execute(produto_tbl.insert().values(
                 nome=nome,
                 unidade=unidade,
                 quantidade_restante=qtd,
-                preco_unitario=preco
+                preco_unitario=preco,
+                data_compra=data
             ))
             print(f">> Produto {nome} inserido.")
         print(">> Produtos inseridos com nomes padronizados.")
@@ -169,14 +172,16 @@ def gerar_gastos(engine, dias: int, usuario_id: int):
                     print(f">> {atividade_nome} não realizada em {data}")
                     continue
 
-                for nome_prod, qtd in zip(perfil["produtos"], perfil["gasto_total"]):
-                    print(f">> {atividade_nome} em {data} gastando {qtd} de {nome_prod}")
+                for nome_prod, porcent in zip(perfil["produtos"], perfil["gasto_total"]):
+                    
+                    print(f">> {atividade_nome} em {data} gastando {porcent} porcento de {nome_prod}")
                     result = conn.execute(produto_tbl.select().where(produto_tbl.c.nome == nome_prod)).first()
 
                     if not result:
                         print(f">> Produto {nome_prod} não encontrado.")
                         continue
                     if result:
+                        qtd = round(porcent * result.quantidade_restante, 2) # calculando quantidade de produto gasto
                         if result.quantidade_restante < qtd:
                             print(f">> Produto {nome_prod} não tem quantidade suficiente.")
                             continue
@@ -184,10 +189,12 @@ def gerar_gastos(engine, dias: int, usuario_id: int):
                             "usuario_id": usuario_id,
                             "produto_id": result.id,
                             "atividade": atividade_nome,
-                            "quantidade": qtd,
+                            "porcentagem_gasto": porcent,
+                            "consumo": qtd,
                             "data": data
                         })
                         nova_qtd = max(result.quantidade_restante - qtd, 0)
+                        print (f">> Produto {nome_prod} atualizado para {nova_qtd}")
                         conn.execute(produto_tbl.update().where(produto_tbl.c.id == result.id).values(
                             quantidade_restante=nova_qtd
                         ))
@@ -236,7 +243,7 @@ if __name__ == "__main__":
     parser.add_argument("--usuario", type=int, default=1)
     args = parser.parse_args()
 
-    
+    inserir_produtos(engine)
     registros = gerar_gastos(engine, args.dias, args.usuario)
 
     for registro in registros:

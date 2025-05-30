@@ -1,128 +1,74 @@
-import pandas as pd
 import streamlit as st
-import plotly.express as px
+import pandas as pd
 from db import engine
-from util import dias_monitorados
-
-# ---------------------------
-# FUNÇÕES
-# ---------------------------
-
-def pegar_todos_produtos():
-    """Retorna todos os produtos."""
-    return pd.read_sql("SELECT * FROM produto", engine)
 
 
-def pegar_atividades_produto(id_produto, dias):
-    """Retorna atividades de um produto específico nos últimos X dias."""
-    query = """
-        SELECT * FROM atividade 
-        WHERE id_produto = ? AND data >= DATE('now', ?)
-    """
-    params = [id_produto, dias]
-    return pd.read_sql(query, engine, params=params, parse_dates=["data"])
+# =======================
+# Funções auxiliares
+# =======================
+@st.cache_data
+def carregar_dados():
+    produto = pd.read_sql("SELECT * FROM produto", engine)
+    compra = pd.read_sql("SELECT * FROM compra", engine)
+    atividade = pd.read_sql("SELECT * FROM atividade", engine)
+    return produto, compra, atividade
 
+def calcular_consumo_mensal(atividade_df, produto_df, compra_df):
+    atividade_df['data'] = pd.to_datetime(atividade_df['data'])
+    compra_df['data'] = pd.to_datetime(compra_df['data'])
 
-def pegar_todas_atividades(dias):
-    """Retorna todas as atividades dos últimos X dias."""
-    query = """
-        SELECT * FROM atividade 
-        WHERE data >= DATE('now', ?)
-    """
-    return pd.read_sql(query, engine, params=[f"-{dias} days"], parse_dates=["data"])
+    atividade_df['mes'] = atividade_df['data'].dt.to_period('M')
+    compra_df['mes'] = compra_df['data'].dt.to_period('M')
 
+    # Consumo mensal em volume
+    consumo_mensal = (
+        atividade_df.groupby(['mes', 'produto_id'])['quantidade'].sum().reset_index()
+        .merge(produto_df[['id', 'nome', 'unidade']], left_on='produto_id', right_on='id', how='left')
+    )
 
-def pegar_quantidade_total_produto(id_produto, dias):
-    """Calcula a quantidade total usada de um produto nos últimos X dias."""
-    df = pegar_atividades_produto(id_produto, dias)
-    return df["quantidade"].sum() if not df.empty else 0
+    # Gasto mensal
+    gasto_mensal = (
+        compra_df.groupby(['mes', 'produto_id'])['gasto_total'].sum().reset_index()
+        .merge(produto_df[['id', 'nome']], left_on='produto_id', right_on='id', how='left')
+    )
 
+    return consumo_mensal, gasto_mensal
 
-# ---------------------------
-# UI
-# ---------------------------
+def gasto_por_produto(compra_df, produto_df):
+    gasto_total = (
+        compra_df.groupby('produto_id')['gasto_total'].sum().reset_index()
+        .merge(produto_df[['id', 'nome']], left_on='produto_id', right_on='id', how='left')
+        .sort_values(by='gasto_total', ascending=False)
+    )
+    return gasto_total
 
-st.title("🧼 Dashboard - Consumo de Produtos de Higiene e Limpeza")
+# =======================
+# Interface do Dashboard
+# =======================
+st.title("📊 Dashboard de Consumo de Produtos de Higiene e Limpeza")
 
-dias = st.sidebar.slider("Últimos dias", 1, 30, 7)
+produto_df, compra_df, atividade_df = carregar_dados()
 
-# Carrega produtos
-produtos_df = pegar_todos_produtos()
-produto_opcoes = ["Todos"] + produtos_df["nome"].tolist()
-produto_nome = st.sidebar.selectbox("Produto", produto_opcoes)
+st.header("1️⃣ Consumo Mensal (volume e valor)")
+consumo_mensal, gasto_mensal = calcular_consumo_mensal(atividade_df, produto_df, compra_df)
 
-# ---------------------------
-# VISUALIZAÇÃO
-# ---------------------------
+col1, col2 = st.columns(2)
 
-if produto_nome == "Todos":
-    for id_produto in produtos_df["id"]:
-        df = pegar_atividades_produto(id_produto, dias)
-        # gráfico de linhas com as atividades de cada produto
-        fig = px.line(df, x="data", y="quantidade", color="atividade", title=f"Consumo de {produto_nome}")
-        st.plotly_chart(fig)
-        st.write(f"💧 Restante: {pegar_quantidade_total_produto(id_produto, dias):.1f} mL")
-else:
-    
-    df = pegar_atividades_produto(produtos_df["id"], dias)
+with col1:
+    st.subheader("Volume (por produto/mês)")
+    st.dataframe(consumo_mensal)
 
-    if df.empty:
-        st.warning("⚠️ Nenhuma atividade registrada para esse produto.")
-    else:
-        # ---------------------
-        # Métricas
-        # ---------------------
-        restante_total = df["quantidade"].sum() * 100  # exemplo: 100ml por unidade
-        agrupado = df.groupby("atividade")["quantidade"].sum()
+with col2:
+    st.subheader("Valor pago (por produto/mês)")
+    st.dataframe(gasto_mensal)
 
-        max_atividade = agrupado.idxmax()
-        min_atividade = agrupado.idxmin()
+st.header("2️⃣ Produtos Registrados")
+st.dataframe(produto_df[['nome', 'unidade', 'quantidade_restante', 'preco_unitario']])
 
-        col1, col2, col3 = st.columns(3)
-        col1.metric("💧 Restante", f"{restante_total:.1f} mL")
-        col2.metric("📈 Maior Consumo", max_atividade)
-        col3.metric("📉 Menor Consumo", min_atividade)
+st.header("3️⃣ Gasto total por produto")
+gasto_produto = gasto_por_produto(compra_df, produto_df)
+st.dataframe(gasto_produto)
 
-        # ---------------------
-        # Gráfico de linha
-        # ---------------------
-        st.subheader("📅 Consumo ao longo do tempo")
-        df_ordenado = df.sort_values("data")
-        st.line_chart(df_ordenado.set_index("data")["quantidade"])
-
-        # ---------------------
-        # Pizza por atividade
-        # ---------------------
-        st.subheader("🔧 Consumo por Atividade")
-        fig_pie = px.pie(
-            agrupado.reset_index(),
-            values="quantidade",
-            names="atividade",
-            title="Distribuição do Consumo por Atividade"
-        )
-        st.plotly_chart(fig_pie, use_container_width=True)
-
-        # ---------------------
-        # Gráfico de barra diário
-        # ---------------------
-        st.subheader("📊 Consumo Diário")
-        df_por_dia = df.set_index("data").resample("D")["quantidade"].sum()
-        fig_bar = px.bar(
-            df_por_dia.reset_index(),
-            x="data",
-            y="quantidade",
-            labels={"quantidade": "Quantidade (mL)", "data": "Data"}
-        )
-        st.plotly_chart(fig_bar, use_container_width=True)
-
-        # ---------------------
-        # Gastos
-        # ---------------------
-        st.subheader("💸 Gastos")
-        st.info("Cálculo de gastos será adicionado em breve.")
-
-        # ---------------------
-        # Dados Brutos
-        # ---------------------
-        with st.expander("📄 Dados Brutos"):
-            st.dataframe(df)
+# Gráfico opcional
+st.subheader("🔍 Gráfico de Gasto por Produto")
+st.bar_chart(gasto_produto.set_index('nome')['gasto_total'])

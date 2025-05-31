@@ -34,7 +34,7 @@ if tipo == "Água":
             "volume_litros": volume,
             "timestamp": timestamp.isoformat()
         }
-        r = requests.post("http://localhost:8000/consumo_agua", json=payload)
+        r = requests.post("sqlite:///../consumo.db", json=payload)
         if r.ok:
             st.success("Dados inseridos com sucesso!")
         else:
@@ -64,7 +64,7 @@ elif tipo == "Energia":
             "gasto_h": round((potencia * duracao_h) / 1000, 3),
             "timestamp": timestamp.isoformat()
         }
-        r = requests.post("http://localhost:8000/consumo_energia", json=payload)
+        r = requests.post("sqlite:///../consumo.db", json=payload)
         if r.ok:
             st.success("Dados inseridos com sucesso!")
         else:

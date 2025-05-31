@@ -116,6 +116,7 @@ atividade_tbl = Table(
     Column("id", Integer, primary_key=True),
     Column("usuario_id", Integer, nullable=False),
     Column("produto_id", Integer, nullable=False),
+    Column("produto_nome", Integer, nullable=False),
     Column("atividade", String, nullable=False),
     Column("porcentagem_gasto", Float, nullable=False),
     Column("consumo", Float, nullable=False),
@@ -188,6 +189,7 @@ def gerar_gastos(engine, dias: int, usuario_id: int):
                         registros.append({
                             "usuario_id": usuario_id,
                             "produto_id": result.id,
+                            "produto_nome": result.nome,
                             "atividade": atividade_nome,
                             "porcentagem_gasto": porcent,
                             "consumo": qtd,

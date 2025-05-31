@@ -1,17 +1,17 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 from db import engine
 
 
-# =======================
-# Funções auxiliares
-# =======================
+# ========== Funções auxiliares ==========
 @st.cache_data
 def carregar_dados():
     produto = pd.read_sql("SELECT * FROM produto", engine)
     compra = pd.read_sql("SELECT * FROM compra", engine)
     atividade = pd.read_sql("SELECT * FROM atividade", engine)
     return produto, compra, atividade
+
 
 def calcular_consumo_mensal(atividade_df, produto_df, compra_df):
     atividade_df['data'] = pd.to_datetime(atividade_df['data'])
@@ -20,13 +20,11 @@ def calcular_consumo_mensal(atividade_df, produto_df, compra_df):
     atividade_df['mes'] = atividade_df['data'].dt.to_period('M')
     compra_df['mes'] = compra_df['data'].dt.to_period('M')
 
-    # Consumo mensal em volume
     consumo_mensal = (
         atividade_df.groupby(['mes', 'produto_id'])['porcentagem_gasto'].sum().reset_index()
         .merge(produto_df[['id', 'nome', 'unidade']], left_on='produto_id', right_on='id', how='left')
     )
 
-    # Gasto mensal
     gasto_mensal = (
         compra_df.groupby(['mes', 'produto_id'])['gasto_total'].sum().reset_index()
         .merge(produto_df[['id', 'nome']], left_on='produto_id', right_on='id', how='left')
@@ -48,28 +46,89 @@ def gasto_por_produto(compra_df, produto_df):
 st.set_page_config(page_title="Monitor de Produtos", layout="wide", page_icon="🧴")
 st.title("🧺🧼 Dashboard de Consumo de Produtos de Higiene e Limpeza")
 
+# Carrega dados
 produto_df, compra_df, atividade_df = carregar_dados()
-
-st.header("1️⃣ Consumo Mensal (volume e valor)")
 consumo_mensal, gasto_mensal = calcular_consumo_mensal(atividade_df, produto_df, compra_df)
 
-col1, col2 = st.columns(2)
+# Seção: Visão Geral
+st.markdown("## 📌 Visão Geral")
 
+col1, col2 = st.columns(2)
 with col1:
-    st.subheader("Volume (por produto/mês)")
+    st.metric("Total de Produtos Cadastrados", produto_df.shape[0])
+    st.metric("Total de Atividades Registradas", atividade_df.shape[0])
+with col2:
+    gasto_total = compra_df['gasto_total'].sum()
+    st.metric("💰 Gasto Total Registrado", f"R$ {gasto_total:.2f}")
+
+st.divider()
+
+# Seção: Consumo e Gasto Mensal
+st.markdown("## 📈 Consumo e Gasto por Mês")
+
+tab1, tab2 = st.tabs(["📦 Volume Consumido", "💵 Gasto por Produto"])
+
+with tab1:
+    st.subheader("Consumo (volume por produto/mês)")
     st.dataframe(consumo_mensal)
 
-with col2:
-    st.subheader("Valor pago (por produto/mês)")
+with tab2:
+    st.subheader("Gasto total (por produto/mês)")
     st.dataframe(gasto_mensal)
 
-st.header("2️⃣ Produtos Registrados")
-st.dataframe(produto_df[['nome', 'unidade', 'quantidade_restante', 'preco_unitario']])
+st.divider()
 
-st.header("3️⃣ Gasto total por produto")
-gasto_produto = gasto_por_produto(compra_df, produto_df)
-st.dataframe(gasto_produto)
+# Seção: Produtos Registrados
+st.markdown("## 🧴 Produtos Registrados")
+st.dataframe(produto_df[['nome', 'unidade', 'quantidade_restante', 'preco_unitario']], use_container_width=True)
 
-# Gráfico opcional
-st.subheader("🔍 Gráfico de Gasto por Produto")
-st.bar_chart(gasto_produto.set_index('nome')['gasto_total'])
+st.divider()
+
+# Seção: Distribuição de uso por atividade
+st.markdown("## 🧪 Distribuição de Uso por Atividade")
+
+produto_selecionado = st.selectbox("Selecione um produto para visualizar sua distribuição de uso", produto_df["nome"].unique())
+df_filtro = atividade_df[atividade_df["produto_nome"] == produto_selecionado]
+atividades = df_filtro["atividade"].value_counts()
+
+if len(atividades) > 1:
+    fig, ax = plt.subplots(figsize=(6, 6))
+    atividades.plot.pie(autopct="%1.1f%%", ax=ax, legend=False)
+    ax.set_ylabel("")
+    ax.set_title(f"Distribuição de uso de '{produto_selecionado}'")
+    st.pyplot(fig)
+else:
+    st.info("Este produto foi usado em apenas uma atividade.")
+
+st.divider()
+
+# Seção: Consumo ao longo do tempo
+st.markdown("## 📅 Consumo ao Longo do Tempo")
+
+if not df_filtro.empty:
+    st.line_chart(df_filtro.set_index('data')['consumo'])
+else:
+    st.warning("Nenhum dado disponível para este produto.")
+
+st.divider()
+
+# Seção: Preços dos Produtos
+st.markdown("## 💲 Preços Unitários dos Produtos")
+
+df_precos = produto_df[['nome', 'preco_unitario']]
+st.bar_chart(df_precos.set_index("nome"))
+
+st.divider()
+
+# Seção: Dados Brutos e Exportação
+with st.expander("📄 Visualizar Dados Brutos"):
+    st.dataframe(atividade_df)
+    st.dataframe(produto_df)
+    st.dataframe(compra_df)
+
+    st.download_button(
+        label="⬇️ Baixar dados em CSV",
+        data=pd.concat([atividade_df, produto_df, compra_df]).to_csv(index=False).encode('utf-8'),
+        file_name='dados_brutos.csv',
+        mime='text/csv',
+    )

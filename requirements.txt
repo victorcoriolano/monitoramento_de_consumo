@@ -4,6 +4,7 @@ requests
 faker
 sqlalchemy
 plotly   
+matplotlib
 # API:
 fastapi
 uvicorn

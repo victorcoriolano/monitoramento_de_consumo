@@ -204,7 +204,7 @@ def gerar_gastos(engine, dias: int, usuario_id: int):
 
 
 
-def inserir_compra(engine, usuario_id: int, produto_id: int, quantidade: float, preco_unitario: float, data: datetime.date):
+def inserir_compra(engine, usuario_id: int, produto_id: int, quantidade: float, preco_unitario: float, data: datetime):
     with engine.begin() as conn: 
         total = round(quantidade * preco_unitario, 2)
 

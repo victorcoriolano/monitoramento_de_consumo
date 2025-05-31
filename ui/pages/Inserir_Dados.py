@@ -132,19 +132,48 @@ elif tipo == "Higiene - Limpeza":
 
         
         consumo = quantidate_total * porcent / 100
+        id = int(produtos_df[produtos_df["nome"] == produto]["id"].values[0])
 
         if st.button("Salvar Dados de Higiene e Limpeza"):
             payload = {
                 "usuario_id": id_usuario,
-                "produto_id": produtos_df[produtos_df["nome"] == produto]["id"],
+                "produto_id": id,
                 'produto_nome': produto,
                 "atividade": atividade,
                 "porcentagem_gasto": porcent,
                 "consumo": consumo,
-                "timestamp": datetime.now()
+                "data": datetime.now().isoformat()
             }
-            inserir_dados(payload, "consumo_higiene")
+            inserir_dados("consumo_higiene", payload)
     
+    with st.expander("Inserir compra"):
+        st.subheader("📦 Inserir Compra")
+        compras = []
+        produtos_carrinho = st.multiselect("Produtos", produtos_nome)
+        for produto in produtos_carrinho:
+            id = int(produtos_df[produtos_df["nome"] == produto]["id"].values[0])
+            quantidade = st.number_input(f"Quantidade de {produto}", min_value=0.01, format="%.2f")
+            preco_unitario = st.number_input(f"Preço Unitário de {produto}", min_value=0.01, format="%.2f")
+            data_compra = st.date_input(f"Data da Compra de {produto}")
+            payload = {
+                "usuario_id": id_usuario,
+                "produto_id": id,
+                "produto_nome": produto,
+                "quantidade": quantidade,
+                "gasto_total": preco_unitario,
+                "data": data_compra.isoformat()
+            }
+            compras.append(payload)
+        
+        if st.button("Salvar Compra"):
+            for compra in compras:
+                r = requests.post(f"{API_URL}/compra", json=compra)
+                if r.ok:
+                    st.success("Dados inseridos com sucesso!")
+                else:
+                    st.error("Erro ao inserir dados.")
+
+                     
     
 
     

@@ -24,7 +24,7 @@ def cria(consumo: Consumo):
     return {"status":"ok"}
 
 @app.get("/consumo")
-def lista(atividade: str = None):
+def lista(atividade: str):
     sel = consumo_tbl.select()
     if atividade:
         sel = sel.where(consumo_tbl.c.atividade == atividade)

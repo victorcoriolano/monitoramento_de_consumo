@@ -4,6 +4,11 @@ import pandas as pd
 from datetime import datetime, timedelta
 from faker import Faker
 from sqlalchemy import create_engine
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from api.tables import metadata, produto_tbl, atividade_tbl, compra_tbl
 
 
@@ -120,7 +125,7 @@ def inserir_produtos(engine):
                 nome=nome,
                 unidade=unidade,
                 quantidade_restante=qtd_rest,
-                qunatidade_total=qnt_t,
+                quantidade_total=qnt_t,
                 quantidade_estoque=qnt_es,
                 preco_unitario=preco,
                 data_compra=data

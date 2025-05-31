@@ -21,8 +21,8 @@ def calcular_consumo_mensal(atividade_df, produto_df, compra_df):
     compra_df['mes'] = compra_df['data'].dt.to_period('M')
 
     consumo_mensal = (
-        atividade_df.groupby(['mes', 'produto_id'])['consumo'].sum().reset_index()
-        .merge(produto_df[['id', 'nome', 'unidade', 'preco_unitario']], left_on='produto_id', right_on='id', how='left')
+        atividade_df.groupby(['mes', 'produto_id'])['porcentagem_gasto'].sum().reset_index()
+        .merge(produto_df[['id', 'nome', 'unidade']], left_on='produto_id', right_on='id', how='left')
     )
 
     gasto_mensal = (
@@ -32,11 +32,19 @@ def calcular_consumo_mensal(atividade_df, produto_df, compra_df):
 
     return consumo_mensal, gasto_mensal
 
+def gasto_por_produto(compra_df, produto_df):
+    gasto_total = (
+        compra_df.groupby('produto_id')['gasto_total'].sum().reset_index()
+        .merge(produto_df[['id', 'nome']], left_on='produto_id', right_on='id', how='left')
+        .sort_values(by='gasto_total', ascending=False)
+    )
+    return gasto_total
 
-# ========== UI ==========
-
-st.set_page_config(page_title="Dashboard de Consumo", layout="wide")
-st.title("🧼 Dashboard de Consumo de Produtos de Higiene e Limpeza")
+# =======================
+# Interface do Dashboard
+# =======================
+st.set_page_config(page_title="Monitor de Produtos", layout="wide", page_icon="🧴")
+st.title("🧺🧼 Dashboard de Consumo de Produtos de Higiene e Limpeza")
 
 # Carrega dados
 produto_df, compra_df, atividade_df = carregar_dados()

@@ -4,7 +4,8 @@ import plotly.express as px
 from db import engine
 from util import carregar_dados, dias_monitorados
 
-st.title("💧 Dashboard - Consumo de Energia")
+st.set_page_config(page_title="Monitor de Energia", layout="wide", page_icon="⚡")
+st.title("⚡ Dashboard - Consumo de Energia")
 
 dias = st.sidebar.slider("Últimos dias", 1, 30, 7)
 equipamentos = ["Todas"] + pd.read_sql(f"SELECT DISTINCT equipamento FROM consumo_energia", engine)["equipamento"].tolist()

@@ -22,6 +22,7 @@ compra_tbl = Table(
     Column("id", Integer, primary_key=True),
     Column("usuario_id", Integer, nullable=False),
     Column("produto_id", Integer, nullable=False),
+    Column("produto_nome", String, nullable=False),
     Column("quantidade", Float, nullable=False),
     Column("gasto_total", Float, nullable=False),
     Column("data", Date, nullable=False),

@@ -27,9 +27,10 @@ class Produto(BaseModel):
 class Compra(BaseModel):
     usuario_id: int
     produto_id: int
+    produto_nome: str
     quantidade: float
     gasto_total: float
-    timestamp: datetime
+    data: datetime
 
 class Atividade_gasto(BaseModel):
     usuario_id: int
@@ -38,6 +39,6 @@ class Atividade_gasto(BaseModel):
     atividade: str
     porcentagem_gasto: float
     consumo: float
-    timestamp: datetime
+    data: datetime
 
  

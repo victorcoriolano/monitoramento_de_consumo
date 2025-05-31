@@ -4,6 +4,7 @@ import plotly.express as px
 from db import engine
 from util import carregar_dados, dias_monitorados
 
+st.set_page_config(page_title="Monitor de Água", layout="wide", page_icon="💧")
 st.title("💧 Dashboard - Consumo de Água")
 
 dias = st.sidebar.slider("Últimos dias", 1, 30, 7)

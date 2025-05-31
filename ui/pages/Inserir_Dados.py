@@ -111,17 +111,17 @@ elif tipo == "Higiene - Limpeza":
         stamp = st.date_input("Data e hora do consumo", value=datetime.now())
         salvar = st.button("Salvar Produto")
         if salvar:
-            produto = Produto(
-                nome=nome_produto,
-                unidade=unidade_medida,
-                quantidade_restante=qnt,
-                quantidade_total=qnt,
-                quantidade_estoque=1,
-                preco_unitario=preco_unitario,
-                data_compra=stamp.isoformat()
-            )
-            r = cria_consumo_higiene(produto)
-            if r["status"] == "ok":
+            produto = {
+                "nome": nome_produto,
+                "unidade": unidade_medida,
+                "quantidade_restante": qnt,
+                "quantidade_total": qnt,
+                "quantidade_estoque": 1,
+                "preco_unitario": preco_unitario,
+                "data_compra": stamp.isoformat()
+            }
+            r = requests.post(f"{API_URL}/produto", json=produto)
+            if r.ok:
                 st.success("Dados inseridos com sucesso!")
             else:
                 st.error("Erro ao inserir dados.")

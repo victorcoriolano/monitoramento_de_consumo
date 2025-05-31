@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta, time
 from faker import Faker
-from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, MetaData, Table
+from sqlalchemy import create_engine,  MetaData 
 
 # === 1) Definição dos perfis de consumo por atividade ===
 # média diária total / frequência média → média por vez
@@ -92,14 +92,7 @@ PERFIS = {
 fake = Faker()
 metadata = MetaData()
 
-consumo_tbl = Table(
-    "consumo_agua", metadata,
-    Column("id", Integer, primary_key=True),
-    Column("usuario_id", Integer, nullable=False),
-    Column("atividade", String, nullable=False),
-    Column("volume_litros", Float, nullable=False),
-    Column("timestamp", DateTime, nullable=False),
-)
+
 
 def main(db_url: str, dias: int, usuario_id: int):
     engine = create_engine(db_url)

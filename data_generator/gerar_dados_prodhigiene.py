@@ -96,30 +96,32 @@ def inserir_produtos(engine):
     hoje = datetime.now().date()
     d = hoje - timedelta(days=100)
     produtos = [
-        ("rolo_papel", "m", 30, 5.0, d),
-        ("pasta_dente", "g", 70, 7.0, d),
-        ("sabonete", "g", 70, 3.0, d),
-        ("desodorante", "g", 55, 9.0 , d),
-        ("condicionador", "ml", 200, 12.0 , d),
-        ("shampoo", "ml", 200, 10.0     , d),
-        ("sabao_pedra", "g", 200, 2.5   , d),
-        ("detergente", "ml", 500, 3.0 , d),
-        ("veja", "ml", 500, 6.0 , d),
-        ("desinfetante", "ml", 2000, 8.0 , d),
-        ("cloro", "ml", 5000, 7.5   , d),
-        ("pinho", "ml", 1000, 6.5   , d),
-        ("sabao_em_po", "g", 1000, 20.0 , d),
-        ("amaciante", "ml", 2000, 11.0  , d),
-        ("cotonete", "un", 75, 5.0      , d),
+        ("rolo_papel", "m", 30, 30, 4, 5.0, d),
+        ("pasta_dente", "g", 70,70, 1, 7.0, d),
+        ("sabonete", "g", 70,70,1, 3.0, d),
+        ("desodorante", "g", 55, 55, 1, 9.0 , d),
+        ("condicionador", "ml", 200,200, 1, 12.0 , d),
+        ("shampoo", "ml", 200, 200, 1, 10.0     , d),
+        ("sabao_pedra", "g", 200, 200, 2, 2.5   , d),
+        ("detergente", "ml", 500, 500, 1, 3.0 , d),
+        ("veja", "ml", 500, 500, 1, 6.0 , d),
+        ("desinfetante", "ml", 2000, 2000, 1, 8.0 , d),
+        ("cloro", "ml", 5000, 5000, 1, 7.5   , d),
+        ("pinho", "ml", 1000, 1000, 1, 6.5   , d),
+        ("sabao_em_po", "g", 1000, 1000, 1, 20.0 , d),
+        ("amaciante", "ml", 2000, 2000, 1, 11.0  , d),
+        ("cotonete", "un", 75, 75, 1, 5.0      , d),
     ]
 
     with engine.begin() as conn: 
-        for nome, unidade, qtd, preco, data in produtos:
+        for nome, unidade, qtd_rest, qnt_t, qnt_es, preco, data in produtos:
             print(f">> Inserindo produto {nome}...")
             conn.execute(produto_tbl.insert().values(
                 nome=nome,
                 unidade=unidade,
-                quantidade_restante=qtd,
+                quantidade_restante=qtd_rest,
+                qunatidade_total=qnt_t,
+                quantidade_estoque=qnt_es,
                 preco_unitario=preco,
                 data_compra=data
             ))
@@ -188,8 +190,10 @@ def inserir_compra(engine, usuario_id: int, produto_id: int, quantidade: float, 
 
         produto = conn.execute(produto_tbl.select().where(produto_tbl.c.id == produto_id)).first()
         nova_qtd = produto.quantidade_restante + quantidade
+        nova_qtd_estoque = produto.quantidade_estoque + quantidade
         conn.execute(produto_tbl.update().where(produto_tbl.c.id == produto_id).values(
-            quantidade_restante=nova_qtd
+            quantidade_restante=nova_qtd,
+            quantidade_estoque=nova_qtd_estoque
         ))
         print(f">> Compra registrada para produto {produto_id}")
 

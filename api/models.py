@@ -21,6 +21,8 @@ class Produto(BaseModel):
     unidade: str
     preco_unitario: float
     quantidade_restante: float
+    quantidade_total: float
+    quantidade_estoque: int
     timestamp: datetime
 
 class Compra(BaseModel):

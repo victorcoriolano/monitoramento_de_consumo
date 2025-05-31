@@ -11,6 +11,8 @@ produto_tbl = Table(
     Column("nome", String, nullable=False),
     Column("unidade", String, nullable=False),
     Column("quantidade_restante", Float, nullable=False),
+    Column("quantidade_total", Float, nullable=False),
+    Column("quantidade_estoque", Integer, nullable=False),
     Column("preco_unitario", Float, nullable=False),
     Column("data_compra", Date, nullable=False),
 )

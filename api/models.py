@@ -16,14 +16,13 @@ class ConsumoEnergia(BaseModel):
 
 
 class Produto(BaseModel):
-    usuario_id: int
-    prod_nome: str
+    nome: str
     unidade: str
-    preco_unitario: float
     quantidade_restante: float
     quantidade_total: float
     quantidade_estoque: int
-    timestamp: datetime
+    preco_unitario: float
+    data_compra: datetime
 
 class Compra(BaseModel):
     usuario_id: int

@@ -1,7 +1,9 @@
 import streamlit as st
 import requests
 from datetime import datetime
-from api.app import API_URL
+from api.app import API_URL, cria_consumo_higiene
+from api.models import Produto
+
 from db import engine
 import pandas as pd
 
@@ -20,7 +22,7 @@ st.title("📥 Inserção de Dados de Consumo")
 TIPOS = ["Escolher","Água", "Energia", "Higiene - Limpeza"]
 tipo = st.selectbox("Escolha o tipo de consumo", TIPOS)
 
-usuario_id = st.number_input("ID do Usuário", min_value=1, step=1)
+id_usuario = st.number_input("ID do Usuário", min_value=1, step=1)
 timestamp = st.date_input("Data e Hora do Consumo", value=datetime.now())
 
 # === FORMULÁRIO DE INSERÇÃO PARA CADA TIPO ===
@@ -41,7 +43,7 @@ if tipo == "Água":
 
     if st.button("Salvar Dados de Água"):
         payload = {
-            "usuario_id": usuario_id,
+            "usuario_id": id_usuario,
             "atividade": atividade,
             "volume_litros": volume,
             "timestamp": timestamp.isoformat()
@@ -71,7 +73,7 @@ elif tipo == "Energia":
 
     if st.button("Salvar Dados de Energia"):
         payload = {
-            "usuario_id": usuario_id,
+            "usuario_id": id_usuario,
             "equipamento": equipamento,
             "potencia_w": potencia,
             "gasto_h": round((potencia * duracao_h) / 1000, 3),
@@ -84,8 +86,8 @@ elif tipo == "Energia":
             st.error("Erro ao inserir dados.")
 
 elif tipo == "Higiene - Limpeza":
-
-    produtos_df = pd.read_sql("SELECT nome FROM produto", engine)
+    
+    produtos_df = pd.read_sql("SELECT * FROM produto", engine)
     produtos_nome = produtos_df["nome"].tolist()
 
 
@@ -102,28 +104,38 @@ elif tipo == "Higiene - Limpeza":
         atividade = atividade
     produto = st.selectbox("Produto", produtos_nome + ["Outro"])
     if produto == "Outro":
-        produto = st.text_input("Descreva o nome do produto", max_chars=200)
+        nome_produto = st.text_input("Descreva o nome do produto", max_chars=200)
         unidade_medida = st.text_input("Unidade de Medida", max_chars=200)
         qnt = st.number_input("Quantidade", min_value=0.01, format="%.2f")
         preco_unitario = st.number_input("Preço Unitário", min_value=0.01, format="%.2f")
         stamp = st.date_input("Data e hora do consumo", value=datetime.now())
         salvar = st.button("Salvar Produto")
         if salvar:
-            payload = {
-                "usuario_id": usuario_id,
-                "prod_nome": produto,
-                "unidade": unidade_medida,
-                "preco_unitario": preco_unitario,
-                "quantidade_restante": qnt,
-                "timestamp": stamp
-            }
-            inserir_dados(payload, "produto")
+            produto = Produto(
+                nome=nome_produto,
+                unidade=unidade_medida,
+                quantidade_restante=qnt,
+                quantidade_total=qnt,
+                quantidade_estoque=1,
+                preco_unitario=preco_unitario,
+                data_compra=stamp.isoformat()
+            )
+            r = cria_consumo_higiene(produto)
+            if r["status"] == "ok":
+                st.success("Dados inseridos com sucesso!")
+            else:
+                st.error("Erro ao inserir dados.")
     else:
         porcent = st.slider("Quantidade Consumida (em porcentagem)", min_value=0.01, max_value=100.0, value=0.5, format="%.2f")
-        consumo = produtos_df[produtos_df["nome"] == produto]["quantidade_total"] * porcent 
+        
+        quantidate_total = produtos_df[produtos_df["nome"] == produto]["quantidade_total"].values[0]
+
+        
+        consumo = quantidate_total * porcent / 100
+
         if st.button("Salvar Dados de Higiene e Limpeza"):
             payload = {
-                "usuario_id": usuario_id,
+                "usuario_id": id_usuario,
                 "produto_id": produtos_df[produtos_df["nome"] == produto]["id"],
                 'produto_nome': produto,
                 "atividade": atividade,

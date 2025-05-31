@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from datetime import datetime
+from api.app import API_URL
 
 st.set_page_config(page_title="Inserção de Dados", layout="wide", page_icon="📝")
 st.title("📥 Inserção de Dados de Consumo")
@@ -34,7 +35,8 @@ if tipo == "Água":
             "volume_litros": volume,
             "timestamp": timestamp.isoformat()
         }
-        r = requests.post("sqlite:///../consumo.db", json=payload)
+        
+        r = requests.post(f"{API_URL}/consumo_agua", json=payload)
         if r.ok:
             st.success("Dados inseridos com sucesso!")
         else:
@@ -54,7 +56,7 @@ elif tipo == "Energia":
 
     potencia = st.number_input("Potência (W)", min_value=1.0, format="%.1f")
     duracao_h = st.number_input("Tempo de uso (horas)", min_value=0.01, format="%.2f")
-    timestamp = st.date_input("Data e hora do uso", value=datetime.now())
+    #timestamp = st.date_input("Data e hora do uso", value=datetime.now())
 
     if st.button("Salvar Dados de Energia"):
         payload = {
@@ -64,7 +66,7 @@ elif tipo == "Energia":
             "gasto_h": round((potencia * duracao_h) / 1000, 3),
             "timestamp": timestamp.isoformat()
         }
-        r = requests.post("sqlite:///../consumo.db", json=payload)
+        r = requests.post(f"{API_URL}/consumo_energia", json=payload)
         if r.ok:
             st.success("Dados inseridos com sucesso!")
         else:

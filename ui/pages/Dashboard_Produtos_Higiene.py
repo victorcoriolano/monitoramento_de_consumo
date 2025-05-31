@@ -22,7 +22,7 @@ def calcular_consumo_mensal(atividade_df, produto_df, compra_df):
 
     # Consumo mensal em volume
     consumo_mensal = (
-        atividade_df.groupby(['mes', 'produto_id'])['quantidade'].sum().reset_index()
+        atividade_df.groupby(['mes', 'produto_id'])['porcentagem_gasto'].sum().reset_index()
         .merge(produto_df[['id', 'nome', 'unidade']], left_on='produto_id', right_on='id', how='left')
     )
 
@@ -45,7 +45,8 @@ def gasto_por_produto(compra_df, produto_df):
 # =======================
 # Interface do Dashboard
 # =======================
-st.title("📊 Dashboard de Consumo de Produtos de Higiene e Limpeza")
+st.set_page_config(page_title="Monitor de Produtos", layout="wide", page_icon="🧴")
+st.title("🧺🧼 Dashboard de Consumo de Produtos de Higiene e Limpeza")
 
 produto_df, compra_df, atividade_df = carregar_dados()
 

@@ -98,7 +98,7 @@ if len(atividades) > 1:
     ax.set_title(f"Distribuição de uso de '{produto_selecionado}'")
     st.pyplot(fig)
 else:
-    st.info("Este produto foi usado em apenas uma atividade.")
+    st.info(f"Este produto foi usado em apenas uma atividade: {atividades.index[0]}")
 
 st.divider()
 

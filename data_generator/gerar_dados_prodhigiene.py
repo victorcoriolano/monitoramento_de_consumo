@@ -3,7 +3,9 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from faker import Faker
-from sqlalchemy import create_engine, Column, Integer, Float, String, Date, MetaData, Table
+from sqlalchemy import create_engine
+from api.tables import metadata, produto_tbl, atividade_tbl, compra_tbl
+
 
 
 # === Produtos e perfis de consumo ===
@@ -89,40 +91,6 @@ PERFIL_GASTOS = {
 }
 
 faker = Faker()
-metadata = MetaData()
-
-produto_tbl = Table(
-    "produto", metadata,
-    Column("id", Integer, primary_key=True),
-    Column("nome", String, nullable=False),
-    Column("unidade", String, nullable=False),
-    Column("quantidade_restante", Float, nullable=False),
-    Column("preco_unitario", Float, nullable=False),
-    Column("data_compra", Date, nullable=False),
-)
-
-compra_tbl = Table(
-    "compra", metadata,
-    Column("id", Integer, primary_key=True),
-    Column("usuario_id", Integer, nullable=False),
-    Column("produto_id", Integer, nullable=False),
-    Column("quantidade", Float, nullable=False),
-    Column("gasto_total", Float, nullable=False),
-    Column("data", Date, nullable=False),
-)
-
-atividade_tbl = Table(
-    "atividade", metadata,
-    Column("id", Integer, primary_key=True),
-    Column("usuario_id", Integer, nullable=False),
-    Column("produto_id", Integer, nullable=False),
-    Column("produto_nome", Integer, nullable=False),
-    Column("atividade", String, nullable=False),
-    Column("porcentagem_gasto", Float, nullable=False),
-    Column("consumo", Float, nullable=False),
-    Column("data", Date, nullable=False),
-)
-
 
 def inserir_produtos(engine):
     hoje = datetime.now().date()

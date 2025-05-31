@@ -68,15 +68,7 @@ PERFIS = {
 faker = Faker()
 metadata = MetaData()
 
-consumo_tbl = Table(
-    "consumo_energia", metadata,
-    Column("id", Integer, primary_key=True),
-    Column("usuario_id", Integer, nullable=False),
-    Column("equipamento", String, nullable=False),
-    Column("potencia_w", Float, nullable=False),
-    Column("gasto_h", Float, nullable=False),
-    Column("timestamp", DateTime, nullable=False),
-)
+
 
 def main(db_url: str, dias: int, usuario_id: int):
     engine = create_engine(db_url)

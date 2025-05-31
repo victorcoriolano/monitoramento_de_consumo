@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta, time
 from faker import Faker
-from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, MetaData, Table
+from sqlalchemy import create_engine,  MetaData
 
 # === Perfis de consumo por equipamento ===
 PERFIS = {

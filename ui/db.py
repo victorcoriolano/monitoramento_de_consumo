@@ -9,4 +9,4 @@ db_path = os.path.join(base_dir, "consumo.db")
 print("📁 Caminho do banco:", db_path)
 print("🗂️ Existe?", os.path.exists(db_path))
 
-engine = create_engine(f"sqlite:///../{db_path}")
+engine = create_engine(f"sqlite:///{db_path}")

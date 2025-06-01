@@ -6,8 +6,9 @@ from util import carregar_dados, dias_monitorados
 
 st.set_page_config(page_title="Monitor de Energia", layout="wide", page_icon="⚡")
 st.title("⚡ Dashboard - Consumo de Energia")
+dias_mon = dias_monitorados("consumo_energia", engine)
 
-dias = st.sidebar.slider("Últimos dias", 1, 30, 7)
+dias = st.sidebar.slider("Últimos dias", 1, dias_mon, 7)
 equipamentos = ["Todas"] + pd.read_sql(f"SELECT DISTINCT equipamento FROM consumo_energia", engine)["equipamento"].tolist()
 equipamento = st.sidebar.selectbox("equipamento", equipamentos)
 
@@ -50,7 +51,7 @@ else:
     dias_mon = dias_monitorados("consumo_energia", engine)
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("💧 Total Consumido", f"{total:.1f} L")
+    col1.metric("🪫 Total Consumido", f"{total:.1f} Kwh")
     col2.metric("📈 Maior Consumo", max_equipamento)
     col3.metric("📉 Menor Consumo", min_equipamento)
 

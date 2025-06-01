@@ -84,33 +84,8 @@ st.dataframe(produto_df[['nome', 'unidade', 'quantidade_restante', 'preco_unitar
 
 st.divider()
 
-# Seção: Distribuição de uso por atividade
-st.markdown("## 🧪 Distribuição de Uso por Atividade")
 
-produto_selecionado = st.selectbox("Selecione um produto para visualizar sua distribuição de uso", produto_df["nome"].unique())
-df_filtro = atividade_df[atividade_df["produto_nome"] == produto_selecionado]
-atividades = df_filtro["atividade"].value_counts()
 
-if len(atividades) > 1:
-    fig, ax = plt.subplots(figsize=(6, 6))
-    atividades.plot.pie(autopct="%1.1f%%", ax=ax, legend=False)
-    ax.set_ylabel("")
-    ax.set_title(f"Distribuição de uso de '{produto_selecionado}'")
-    st.pyplot(fig)
-else:
-    st.info(f"Este produto foi usado em apenas uma atividade: {atividades.index[0]}")
-
-st.divider()
-
-# Seção: Consumo ao longo do tempo
-st.markdown("## 📅 Consumo ao Longo do Tempo")
-
-if not df_filtro.empty:
-    st.line_chart(df_filtro.set_index('data')['consumo'])
-else:
-    st.warning("Nenhum dado disponível para este produto.")
-
-st.divider()
 
 # Seção: Preços dos Produtos
 st.markdown("## 💲 Preços Unitários dos Produtos")

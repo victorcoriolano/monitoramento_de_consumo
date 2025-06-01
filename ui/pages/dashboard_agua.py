@@ -7,8 +7,9 @@ from util import carregar_dados, dias_monitorados
 
 st.set_page_config(page_title="Monitor de Água", layout="wide", page_icon="💧")
 st.title("💧 Dashboard - Consumo de Água")
+diasmonitorados = dias_monitorados("consumo_agua", engine)
 
-dias = st.sidebar.slider("Últimos dias", 1, 30, 7)
+dias = st.sidebar.slider("Últimos dias", 1, diasmonitorados, 7)
 atividades = ["Todas"] + pd.read_sql(f"SELECT DISTINCT atividade FROM consumo_agua", engine)["atividade"].tolist()
 atividade = st.sidebar.selectbox("Atividade", atividades)
 

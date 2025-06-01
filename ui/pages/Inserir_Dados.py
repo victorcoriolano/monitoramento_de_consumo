@@ -13,7 +13,7 @@ def inserir_dados(tabela, dados):
         response = requests.post(url, json=dados)
         response.raise_for_status()
         st.success("Dados inseridos com sucesso!")
-    except requests.exceptions.ConnectionError:
+    except requests.ConnectionError:
         st.error("❌ Inserção indisponível neste ambiente. Essa funcionalidade só está disponível localmente.")
     except requests.exceptions.HTTPError as err:
         st.error(f"❌ Erro ao inserir dados. Código HTTP: {response.status_code}")

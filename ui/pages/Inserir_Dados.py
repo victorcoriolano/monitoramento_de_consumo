@@ -1,8 +1,8 @@
 import streamlit as st
 import requests
 from datetime import datetime
-from api.app import API_URL, cria_consumo_higiene
-from api.models import Produto
+from api.app import API_URL
+
 
 from db import engine
 import pandas as pd

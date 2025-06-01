@@ -11,10 +11,3 @@ st.title("📊 Monitor de Consumo Doméstico")
 st.markdown("Use o menu lateral para navegar entre dashboards e inserir dados.")
 
 
-st.subheader("🔍 Diagnóstico de arquivos")
-
-cwd = os.getcwd()
-st.write("📁 Diretório atual:", cwd)
-
-st.write("📄 Arquivos neste diretório:")
-st.code("\n".join(os.listdir(cwd)))

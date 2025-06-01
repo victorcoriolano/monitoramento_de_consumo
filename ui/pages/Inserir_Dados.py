@@ -9,12 +9,17 @@ import pandas as pd
 
 def inserir_dados(tabela, dados):
     url = f"{API_URL}/{tabela}"
-    
-    response = requests.post(url, json=dados)
-    if response.status_code == 200:
+    try:
+        response = requests.post(url, json=dados)
+        response.raise_for_status()
         st.success("Dados inseridos com sucesso!")
-    else:
-        st.error("Erro ao inserir dados.")
+    except requests.exceptions.ConnectionError:
+        st.error("❌ Inserção indisponível neste ambiente. Essa funcionalidade só está disponível localmente.")
+    except requests.exceptions.HTTPError as err:
+        st.error(f"❌ Erro ao inserir dados. Código HTTP: {response.status_code}")
+    except Exception as e:
+        st.error(f"❌ Erro inesperado: {str(e)}")
+
 
 st.set_page_config(page_title="Inserção de Dados", layout="wide", page_icon="📝")
 st.title("📥 Inserção de Dados de Consumo")
@@ -49,11 +54,7 @@ if tipo == "Água":
             "timestamp": timestamp.isoformat()
         }
         
-        r = requests.post(f"{API_URL}/consumo_agua", json=payload)
-        if r.ok:
-            st.success("Dados inseridos com sucesso!")
-        else:
-            st.error("Erro ao inserir dados.")
+        inserir_dados("consumo_agua", payload)
 
 elif tipo == "Energia":
     st.subheader("⚡ Inserir Consumo de Energia")
@@ -79,11 +80,8 @@ elif tipo == "Energia":
             "gasto_h": round((potencia * duracao_h) / 1000, 3),
             "timestamp": timestamp.isoformat()
         }
-        r = requests.post(f"{API_URL}/consumo_energia", json=payload)
-        if r.ok:
-            st.success("Dados inseridos com sucesso!")
-        else:
-            st.error("Erro ao inserir dados.")
+        
+        inserir_dados("consumo_energia", payload)
 
 elif tipo == "Higiene - Limpeza":
     
@@ -120,11 +118,7 @@ elif tipo == "Higiene - Limpeza":
                 "preco_unitario": preco_unitario,
                 "data_compra": stamp.isoformat()
             }
-            r = requests.post(f"{API_URL}/produto", json=produto)
-            if r.ok:
-                st.success("Dados inseridos com sucesso!")
-            else:
-                st.error("Erro ao inserir dados.")
+            inserir_dados("produto", produto)
     else:
         porcent = st.slider("Quantidade Consumida (em porcentagem)", min_value=0.01, max_value=100.0, value=0.5, format="%.2f")
         
@@ -167,11 +161,7 @@ elif tipo == "Higiene - Limpeza":
         
         if st.button("Salvar Compra"):
             for compra in compras:
-                r = requests.post(f"{API_URL}/compra", json=compra)
-                if r.ok:
-                    st.success("Dados inseridos com sucesso!")
-                else:
-                    st.error("Erro ao inserir dados.")
+                inserir_dados("compra", compra)
 
                      
     

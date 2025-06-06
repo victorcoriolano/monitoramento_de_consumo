@@ -74,7 +74,7 @@ else:
 
 
     st.subheader("💸 Gastos")
-    st.write(f"R$ {calcular_custo(total):.2f} nos últimos {dias_mon} dias.")
+    st.write(f"R$ {calcular_custo(total):.2f} nos últimos {dias} dias.")
 
     with st.expander("📄 Dados Brutos"):
         st.dataframe(df)
